@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssmsim.dao.ITeacherDao">
+    <resultMap id="teacherMap" type="Teacher">
+        <id column="teacher_id" property="teacherId"/>
+        <result column="teacher_name" property="teacherName"/>
+        <result column="positional_titel" property="positionalTitel"/>
+        <result column="teacher_office" property="teacherOffice"/>
+        <result column="is_adviser" property="isAdviser"/>
+        <result column="teacher_phone" property="teacherPhone"/>
+    </resultMap>
+
+    <select id="selectTeacherById" parameterType="String" resultMap="teacherMap">
+        SELECT *
+        FROM teacher
+        WHERE teacher_id = #{id}
+    </select>
+
+
+    <resultMap id="FakeClassMap" type="FakeClass">
+        <result column="class_id" property="classId"/>
+        <result column="class_name" property="className"/>
+    </resultMap>
+
+    <select id="selectFakeClassById" parameterType="String" resultMap="FakeClassMap">
+        SELECT class.class_id, class_name
+        FROM teacher JOIN teach ON teacher.teacher_id = teach.teacher_id
+         JOIN class ON teach.class_id = class.class_id
+        WHERE teacher.teacher_id = #{teacherId}
+    </select>
+    
+    <resultMap id="FakeStudentMap" type="FakeStudent">
+        <result column="student_id" property="studentId"/>
+        <result column="student_name" property="studentName"/>
+    </resultMap>
+
+    <select id="selectFakeStudentById" parameterType="String" resultMap="FakeStudentMap">
+        SELECT student_id, student_name
+        FROM class JOIN student ON class.class_id = student.class_id
+        WHERE class.class_id = #{classId}
+    </select>
+
+    <select id="selectClassNameById" parameterType="String" resultType="String">
+        SELECT class_name
+        FROM class
+        WHERE class_id = #{classId}
+    </select>
+
+    <resultMap id="AddressBookMap" type="AddressBook">
+        <result column="student_name" property="studentName"/>
+        <result column="student_id" property="studentId"/>
+        <result column="personal_phone_number" property="personalPhoneNumber"/>
+        <result column="home_number" property="homeNumber"/>
+    </resultMap>
+
+    <select id="selectAddressBookById" parameterType="String" resultMap="AddressBookMap">
+        SELECT student.student_id, student.student_name, personal_phone_number, home_number
+        FROM class JOIN student ON class.class_id = student.class_id
+          LEFT JOIN personal_phone_number ON student.student_id = personal_phone_number.student_id
+          LEFT JOIN home_phone_number ON student.student_id = home_phone_number.student_id
+        WHERE class.class_id = #{classId}
+    </select>
+
+    <resultMap id="StudentGradeMap" type="StudentGrade">
+        <result column="student_id" property="studentId"/>
+        <result column="student_name" property="studentName"/>
+        <result column="grade" property="grade"/>
+    </resultMap>
+    <select id="selectStudentGradeById" parameterType="String" resultMap="StudentGradeMap">
+        SELECT take.student_id, student_name, grade
+        FROM teach JOIN take ON teach.section_id = take.section_id
+          JOIN student ON student.student_id = take.student_id
+        WHERE (teach.class_id, teach.teacher_id) = (#{classId},#{teacherId})
+    </select>
+
+    <resultMap id="StudentTitleMap" type="StudentTitle">
+        <result column="student_name" property="studentName"/>
+        <result column="title_name" property="titleName"/>
+    </resultMap>
+    <select id="selectStudentTitleById" parameterType="String" resultMap="StudentTitleMap">
+        SELECT student_name, title_name
+        FROM student JOIN student_title ON student.student_id = student_title.student_id
+          JOIN title ON title.tile_id = student_title.title_id
+        WHERE student.class_id = #{classId}
+    </select>
+
+    <resultMap id="ReportMap" type="Report">
+        <result column="boys_number" property="boysNumber"/>
+        <result column="girls_number" property="girlsNumber"/>
+        <result column="A_grade_number" property="AGradeNumber"/>
+        <result column="B_grade_number" property="BGradeNumber"/>
+        <result column="C_grade_number" property="CGradeNumber"/>
+        <result column="D_grade_number" property="DGradeNumber"/>
+        <result column="E_grade_number" property="EGradeNumber"/>
+    </resultMap>
+    <select id="selectClassReportById" parameterType="String" resultMap="ReportMap">
+        SELECT
+        COUNT(if(student_sex = 1, TRUE , NULL )) AS boys_number,
+        COUNT(if(student_sex = 0, TRUE , NULL )) AS girls_number,
+        COUNT(if(grade >= 90, TRUE, NULL )) AS A_grade_number,
+        COUNT(if(grade &lt;90 AND grade >= 80, TRUE , NULL )) AS B_grade_number,
+        COUNT(if(grade &lt;80 AND grade >= 70, TRUE , NULL )) AS C_grade_number,
+        COUNT(if(grade &lt;70 AND grade >= 60, TRUE , NULL )) AS D_grade_number,
+        COUNT(if(grade &lt;60, TRUE , NULL )) AS E_grade_number
+        FROM student LEFT JOIN take ON student.student_id = take.student_id
+        WHERE student.class_id = #{classId}
+    </select>
+
+    <update id="updateStudentGrade" >
+        UPDATE take
+        SET grade = #{grade}
+        WHERE take.student_id = #{studentId}
+    </update>
+
+    <select id="selectStudentById" parameterType="String" resultType="Student">
+        SELECT *
+        FROM student
+        WHERE student_id = #{studentId}
+    </select>
+
+
+
+</mapper>
